@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新大久保アイドル 好き顔9選</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #fff5f8;
+      color: #333;
+      text-align: center;
+    }
+
+    header {
+      padding: 30px 15px 15px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #888;
+    }
+
+    #game {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+
+    .choices {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      flex-wrap: wrap;
+    }
+
+    .person {
+      width: 300px;
+      background: white;
+      border: none;
+      border-radius: 20px;
+      padding: 12px;
+      cursor: pointer;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      transition: 0.2s;
+    }
+
+    .person:hover {
+      transform: scale(1.03);
+    }
+
+    .person img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 15px;
+    }
+
+    .name {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 12px 0 5px;
+    }
+
+    .result {
+      display: none;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 600px;
+      margin: 25px auto;
+    }
+
+    .result-card {
+      background: white;
+      border-radius: 15px;
+      padding: 8px;
+    }
+
+    .result-card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .rank {
+      font-weight: bold;
+      margin: 5px;
+    }
+
+    button.restart {
+      border: none;
+      background: #ff6f9f;
+      color: white;
+      padding: 13px 25px;
+      border-radius: 30px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 23px;
+      }
+
+      .person {
+        width: 42vw;
+        min-width: 140px;
+      }
+
+      .choices {
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>💗 新大久保アイドル 好き顔9選</h1>
+  <div class="subtitle">あなたの好きな顔を選んでね！</div>
+</header>
+
+<div id="game">
+
+  <h2 id="question">どっちの顔が好き？</h2>
+
+  <div class="choices">
+
+    <button class="person" onclick="choose(0)">
+      <img id="image1" src="https://placehold.co/500x500?text=IDOL+A">
+      <div class="name" id="name1">アイドルA</div>
+    </button>
+
+    <button class="person" onclick="choose(1)">
+      <img id="image2" src="https://placehold.co/500x500?text=IDOL+B">
+      <div class="name" id="name2">アイドルB</div>
+    </button>
+
+  </div>
+
+</div>
+
+<div id="result" class="result">
+
+  <h2>🎀 あなたの好き顔9選 🎀</h2>
+
+  <div class="result-grid" id="resultGrid"></div>
+
+  <button class="restart" onclick="restart()">
+    もう一度遊ぶ
+  </button>
+
+</div>
+
+<script>
+
+const idols = [
+  {
+    name: "アイドルA",
+    image: "https://placehold.co/500x500?text=IDOL+A"
+  },
+  {
+    name: "アイドルB",
+    image: "https://placehold.co/500x500?text=IDOL+B"
+  },
+  {
+    name: "アイドルC",
+    image: "https://placehold.co/500x500?text=IDOL+C"
+  },
+  {
+    name: "アイドルD",
+    image: "https://placehold.co/500x500?text=IDOL+D"
+  },
+  {
+    name: "アイドルE",
+    image: "https://placehold.co/500x500?text=IDOL+E"
+  },
+  {
+    name: "アイドルF",
+    image: "https://placehold.co/500x500?text=IDOL+F"
+  },
+  {
+    name: "アイドルG",
+    image: "https://placehold.co/500x500?text=IDOL+G"
+  },
+  {
+    name: "アイドルH",
+    image: "https://placehold.co/500x500?text=IDOL+H"
+  },
+  {
+    name: "アイドルI",
+    image: "https://placehold.co/500x500?text=IDOL+I"
+  }
+];
+
+let remaining = [...idols];
+let selected = [];
+
+let currentPair = [];
+
+function showPair() {
+
+  if (selected.length >= 9 || remaining.length === 0) {
+    showResult();
+    return;
+  }
+
+  if (remaining.length === 1) {
+    selected.push(remaining[0]);
+    showResult();
+    return;
+  }
+
+  const shuffled = [...remaining].sort(() => Math.random() - 0.5);
+
+  currentPair = [shuffled[0], shuffled[1]];
+
+  document.getElementById("image1").src = currentPair[0].image;
+  document.getElementById("name1").textContent = currentPair[0].name;
+
+  document.getElementById("image2").src = currentPair[1].image;
+  document.getElementById("name2").textContent = currentPair[1].name;
+}
+
+function choose(number) {
+
+  const winner = currentPair[number];
+
+  selected.push(winner);
+
+  remaining = remaining.filter(
+    idol => idol !== currentPair[0] && idol !== currentPair[1]
+  );
+
+  showPair();
+}
+
+function showResult() {
+
+  document.getElementById("game").style.display = "none";
+  document.getElementById("result").style.display = "block";
+
+  const grid = document.getElementById("resultGrid");
+
+  grid.innerHTML = "";
+
+  selected.slice(0, 9).forEach((idol, index) => {
+
+    const card = document.createElement("div");
+
+    card.className = "result-card";
+
+    card.innerHTML = `
+      <div class="rank">${index + 1}位</div>
+      <img src="${idol.image}">
+      <div>${idol.name}</div>
+    `;
+
+    grid.appendChild(card);
+
+  });
+}
+
+function restart() {
+
+  remaining = [...idols];
+  selected = [];
+
+  document.getElementById("game").style.display = "block";
+  document.getElementById("result").style.display = "none";
+
+  showPair();
+}
+
+showPair();
+
+</script>
+
+</body>
+</html>
