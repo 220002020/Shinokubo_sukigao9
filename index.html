@@ -306,61 +306,344 @@ const idols = [
   {
     name: "スンチャン(ANOHRTS)",
     image: "IMG_8408.jpeg"
-  },
+  }
 ];
 
-let remaining = [...idols];
-let selected = [];
+
+// ==============================
+// ゲームに使う変数
+// ==============================
+
+let selectionPool = [];
+let selectionWinners = [];
+let selectionQueue = [];
 
 let currentPair = [];
 
-function showPair() {
+let selectionRound = 0;
 
-  if (selected.length >= 9 || remaining.length === 0) {
-    showResult();
-    return;
-  }
+let finalNine = [];
 
-  if (remaining.length === 1) {
-    selected.push(remaining[0]);
-    showResult();
-    return;
-  }
+let ranking = [];
+let rankingQueue = [];
+let rankingTarget = null;
+let rankingIndex = 0;
 
-  const shuffled = [...remaining].sort(() => Math.random() - 0.5);
+let gameMode = "selection";
 
-  currentPair = [shuffled[0], shuffled[1]];
 
-  document.getElementById("image1").src = currentPair[0].image;
-  document.getElementById("name1").textContent = currentPair[0].name;
+// ==============================
+// シャッフル
+// ==============================
 
-  document.getElementById("image2").src = currentPair[1].image;
-  document.getElementById("name2").textContent = currentPair[1].name;
+function shuffle(array) {
+  return [...array].sort(() => Math.random() - 0.5);
 }
+
+
+// ==============================
+// ゲーム開始
+// ==============================
+
+function startGame() {
+
+  selectionPool = shuffle(idols);
+
+  selectionWinners = [];
+  selectionQueue = [];
+
+  currentPair = [];
+
+  selectionRound = 0;
+
+  finalNine = [];
+
+  ranking = [];
+  rankingQueue = [];
+  rankingTarget = null;
+  rankingIndex = 0;
+
+  gameMode = "selection";
+
+  document.getElementById("game").style.display = "block";
+  document.getElementById("result").style.display = "none";
+
+  beginSelectionRound();
+}
+
+
+// ==============================
+// 選抜ラウンド開始
+// ==============================
+
+function beginSelectionRound() {
+
+  // 9人になったら順位決定へ
+  if (selectionPool.length <= 9) {
+
+    finalNine = shuffle(selectionPool);
+
+    startRanking();
+
+    return;
+  }
+
+  selectionRound++;
+
+  selectionPool = shuffle(selectionPool);
+
+  selectionWinners = [];
+
+  let matchCount;
+
+  // 18人より多い場合は普通の勝ち抜き
+  if (selectionPool.length > 18) {
+
+    matchCount = Math.floor(selectionPool.length / 2);
+
+    // 奇数なら1人はシード
+    if (selectionPool.length % 2 === 1) {
+
+      const bye = selectionPool.pop();
+
+      selectionWinners.push(bye);
+    }
+
+  } else {
+
+    // 9人になるまで必要な人数だけ勝負
+    matchCount = selectionPool.length - 9;
+
+    const byeCount = selectionPool.length - matchCount * 2;
+
+    for (let i = 0; i < byeCount; i++) {
+
+      const bye = selectionPool.pop();
+
+      selectionWinners.push(bye);
+    }
+  }
+
+  selectionQueue = selectionPool.slice(0, matchCount * 2);
+
+  showNextSelectionMatch();
+}
+
+
+// ==============================
+// 次の選抜対決
+// ==============================
+
+function showNextSelectionMatch() {
+
+  if (selectionQueue.length === 0) {
+
+    // このラウンド終了
+    selectionPool = [...selectionWinners];
+
+    beginSelectionRound();
+
+    return;
+  }
+
+  const person1 = selectionQueue.shift();
+  const person2 = selectionQueue.shift();
+
+  currentPair = [person1, person2];
+
+  showPair(
+    currentPair,
+    `第${selectionRound}回戦　どっちの顔が好き？`
+  );
+}
+
+
+// ==============================
+// 画像と名前を表示
+// ==============================
+
+function showPair(pair, questionText) {
+
+  document.getElementById("question").textContent = questionText;
+
+  document.getElementById("image1").src = pair[0].image;
+  document.getElementById("name1").textContent = pair[0].name;
+
+  document.getElementById("image2").src = pair[1].image;
+  document.getElementById("name2").textContent = pair[1].name;
+}
+
+
+// ==============================
+// 「どっちが好き？」を選んだとき
+// ==============================
 
 function choose(number) {
 
-  const winner = currentPair[number];
+  if (!currentPair[number]) {
+    return;
+  }
 
-  selected.push(winner);
+  // 選抜中
+  if (gameMode === "selection") {
 
-  remaining = remaining.filter(
-    idol => idol !== currentPair[0] && idol !== currentPair[1]
-  );
+    const winner = currentPair[number];
 
-  showPair();
+    selectionWinners.push(winner);
+
+    showNextSelectionMatch();
+
+    return;
+  }
+
+
+  // 順位決定中
+  if (gameMode === "ranking") {
+
+    handleRankingChoice(number);
+
+    return;
+  }
 }
+
+
+// ==============================
+// TOP9の順位決定開始
+// ==============================
+
+function startRanking() {
+
+  gameMode = "ranking";
+
+  ranking = [];
+
+  rankingQueue = shuffle(finalNine);
+
+  // 最初の1人を仮の1位にする
+  ranking.push(rankingQueue.shift());
+
+  rankingTarget = rankingQueue.shift();
+
+  rankingIndex = 0;
+
+  showNextRankingComparison();
+}
+
+
+// ==============================
+// 順位決定の対決
+// ==============================
+
+function showNextRankingComparison() {
+
+  // 全員の順位が決まった
+  if (!rankingTarget) {
+
+    showResult();
+
+    return;
+  }
+
+
+  // 最後まで負けなかったら一番下
+  if (rankingIndex >= ranking.length) {
+
+    ranking.push(rankingTarget);
+
+    moveToNextRankingTarget();
+
+    return;
+  }
+
+
+  const currentRankPerson = ranking[rankingIndex];
+
+  currentPair = [
+    rankingTarget,
+    currentRankPerson
+  ];
+
+
+  showPair(
+    currentPair,
+    `TOP9順位決定戦　どっちを上位にする？`
+  );
+}
+
+
+// ==============================
+// 順位決定で選んだとき
+// ==============================
+
+function handleRankingChoice(number) {
+
+  // 左を選んだ
+  // → 新しく順位を決めている人が上位
+
+  if (number === 0) {
+
+    ranking.splice(
+      rankingIndex,
+      0,
+      rankingTarget
+    );
+
+    moveToNextRankingTarget();
+
+    return;
+  }
+
+
+  // 右を選んだ
+  // → 今いる人のほうが上位
+
+  rankingIndex++;
+
+  showNextRankingComparison();
+}
+
+
+// ==============================
+// 次の順位決定へ
+// ==============================
+
+function moveToNextRankingTarget() {
+
+  if (rankingQueue.length === 0) {
+
+    rankingTarget = null;
+
+    showResult();
+
+    return;
+  }
+
+  rankingTarget = rankingQueue.shift();
+
+  rankingIndex = 0;
+
+  showNextRankingComparison();
+}
+
+
+// ==============================
+// 結果表示
+// ==============================
 
 function showResult() {
 
+  gameMode = "result";
+
   document.getElementById("game").style.display = "none";
+
   document.getElementById("result").style.display = "block";
 
   const grid = document.getElementById("resultGrid");
 
   grid.innerHTML = "";
 
-  selected.slice(0, 9).forEach((idol, index) => {
+
+  ranking.slice(0, 9).forEach((idol, index) => {
 
     const card = document.createElement("div");
 
@@ -377,18 +660,23 @@ function showResult() {
   });
 }
 
+
+// ==============================
+// もう一度遊ぶ
+// ==============================
+
 function restart() {
 
-  remaining = [...idols];
-  selected = [];
+  startGame();
 
-  document.getElementById("game").style.display = "block";
-  document.getElementById("result").style.display = "none";
-
-  showPair();
 }
 
-showPair();
+
+// ==============================
+// 最初にゲーム開始
+// ==============================
+
+startGame();
 
 </script>
 
